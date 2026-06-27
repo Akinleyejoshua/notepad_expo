@@ -17,6 +17,8 @@ interface BottomNavProps {
 export function BottomNav({ activeTab, noteId }: BottomNavProps) {
   const navigation = useCustomNavigation();
   const addOrUpdateNote = useNoteStore((state) => state.addOrUpdateNote);
+  const title = useNoteStore(state => state.noteTitle);
+  const content = useNoteStore(state => state.noteContent);
 
   const generateId = () => {
     return "xxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -29,7 +31,13 @@ export function BottomNav({ activeTab, noteId }: BottomNavProps) {
   const isActionScreen = ["Create", "Edit"].includes(activeTab);
 
   const handleCenterPress = () => {
+   
     if (isActionScreen) {
+
+       if (title == "" || content == ""){
+      return toast.show("error", "Please fill in all fields");
+    }
+    
       // Save or Update
       const id = noteId || generateId();
       addOrUpdateNote(id);

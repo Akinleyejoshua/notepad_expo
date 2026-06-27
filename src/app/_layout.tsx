@@ -3,14 +3,16 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { CustomStackNavigator, CustomScreen } from '../../src/context/custom-navigation';
-import HomeScreen  from './index';
+import HomeScreen  from './screens/home';
+import DetailsScreen from './screens/details';
+import SearchScreen from './screens/search';
+import CreateScreen from './screens/create';
 import { useToastStore } from '../store/use-toast-store';
 import { Toast } from '@/components/toast';
 import { GlobalModal } from '@/components/global-modal';
-import BlogScreen from './screens/blog';
-import AdminScreen from './screens/admin';
 // Prevent splash screen auto-hiding while loading fonts
 SplashScreen.preventAutoHideAsync();
 
@@ -31,7 +33,7 @@ const { visible, type, message, description, hideToast } = useToastStore();
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
+      <StatusBar/>
     {/* Global floating toast layer */}
       <Toast
         visible={visible}
@@ -43,8 +45,9 @@ const { visible, type, message, description, hideToast } = useToastStore();
       <GlobalModal />
       <CustomStackNavigator initialRouteName="Home">
       <CustomScreen name="Home" component={HomeScreen} />
-      <CustomScreen name="Blog" component={BlogScreen} />
-      <CustomScreen name="Admin" component={AdminScreen} />
+      <CustomScreen name="Details" component={DetailsScreen} />
+      <CustomScreen name="Search" component={SearchScreen} />
+      <CustomScreen name="Create" component={CreateScreen} />
     </CustomStackNavigator>
     </SafeAreaProvider>
   );

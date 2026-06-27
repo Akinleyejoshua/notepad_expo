@@ -17,19 +17,20 @@ export function AppInput({icon, placeholder, value, onChange, style}: any){
 const styles = StyleSheet.create({
     input: {
         borderWidth: 0,
-        marginLeft: 10,
+        // marginLeft: 10,
         fontSize: 20,
-        fontFamily: "Bricolage-Regular"
+        fontFamily: "Bricolage-Regular",
+        width: "100%"
     },
     inputContainer: {
         borderWidth: 0,
-        borderColor: "#e5e7eb",
+        borderColor: "transparent",
         borderRadius: 50, 
         display: "flex",
         flexDirection: "row",
         alignItems: "center",
-        padding: 10,
-        backgroundColor: "#f6f6f6d3",
-        paddingHorizontal: 30,
+        // padding: 10,
+        backgroundColor: "#f6f6f617",
+        // paddingHorizontal: 30,
     }
 });

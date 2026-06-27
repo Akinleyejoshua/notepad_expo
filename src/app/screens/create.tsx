@@ -5,6 +5,9 @@ import { HomeHeader } from "@/components/home-header";
 import { AppTextArea } from "@/components/app-textareaa";
 import { useNoteStore } from "@/store/use-note-store";
 import { BottomNav } from "@/components/bottom-nav";
+import { AppInput } from "@/components/input";
+import { Text } from "lucide-react-native";
+import RichEditor from "@/components/rich-editor";
 
 export default function CreateScreen({ route }: { route: any }) {
   const navigation = useCustomNavigation();
@@ -31,18 +34,21 @@ export default function CreateScreen({ route }: { route: any }) {
         />
 
         <View style={styles.editorArea}>
-          <AppTextArea
+          <AppInput
+          icon={<Text color={"#888"} size={24} />}
             placeholder="Title"
-            style={{ marginTop: 20 }}
+            style={{ marginTop: 0 }}
             onChange={(val: any) => handleTitleChange(val)}
           />
           <View style={styles.contentCard}>
-            <AppTextArea
+            {/* <AppTextArea
               placeholder="Start writing..."
               style={{ flex: 1 }}
               inputStyle={{ fontSize: 18 }}
               onChange={(val: any) => handleContentChange(val)}
-            />
+            /> */}
+
+            <RichEditor/>
           </View>
         </View>
       </View>
@@ -71,15 +77,15 @@ const styles = StyleSheet.create({
   contentCard: {
     flex: 1,
     marginTop: 16,
-    marginBottom: 16,
-    backgroundColor: "#FFFFFF",
+    marginBottom: 40,
+    backgroundColor: "#ecececff",
     borderRadius: 16,
-    padding: 20,
+    padding: 15,
     shadowColor: "#1A1A2E",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 0,
   },
   navWrapper: {
     paddingHorizontal: 20,

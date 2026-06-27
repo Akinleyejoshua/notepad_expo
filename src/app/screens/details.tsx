@@ -7,6 +7,7 @@ import { useNoteStore } from "@/store/use-note-store";
 import { useEffect, useState } from "react";
 import { BottomNav } from "@/components/bottom-nav";
 import { SkeletonNoteCard } from "@/components/skeleton";
+import { AppInput } from "@/components/input";
 
 export default function DetailsScreen({ route }: { route: any }) {
   const navigation = useCustomNavigation();
@@ -62,10 +63,10 @@ export default function DetailsScreen({ route }: { route: any }) {
           </View>
         ) : (
           <View style={styles.editorArea}>
-            <AppTextArea
+            <AppInput
               value={state.title}
               placeholder="Title"
-              style={{ marginTop: 20 }}
+              style={{ marginTop: 0 }}
               onChange={(val: any) => handleTitleChange(val)}
             />
             <View style={styles.contentCard}>
@@ -105,15 +106,15 @@ const styles = StyleSheet.create({
   contentCard: {
     flex: 1,
     marginTop: 16,
-    marginBottom: 16,
-    backgroundColor: "#FFFFFF",
+    marginBottom: 40,
+    backgroundColor: "#ecececff",
     borderRadius: 16,
-    padding: 20,
+    padding: 15,
     shadowColor: "#1A1A2E",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 0,
   },
   navWrapper: {
     paddingHorizontal: 20,
