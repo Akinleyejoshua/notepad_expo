@@ -12,7 +12,7 @@ echo "⚙️ Appending compression properties to app.json..."
 node -e "
 const fs = require('fs');
 if (!fs.existsSync('app.json')) {
-  echo '❌ Error: app.json not found!';
+  console.error('❌ Error: app.json not found!');
   process.exit(1);
 }
 const appJson = JSON.parse(fs.readFileSync('app.json', 'utf8'));

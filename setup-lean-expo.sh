@@ -26,25 +26,25 @@ npx expo install expo-build-properties
 
 # 4. Inject ProGuard, Resource Shrinking, and Legacy Packaging into app.json
 echo "⚙️ Injecting size optimization configurations into app.json..."
-node - e "
-const fs = require('fs');
-const appJson = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+node -e '
+const fs = require("fs");
+const appJson = JSON.parse(fs.readFileSync("app.json", "utf8"));
 
-// Inject plugins array with configurations
 appJson.expo.plugins = appJson.expo.plugins || [];
 appJson.expo.plugins.push([
-  'expo-build-properties',
+  "expo-build-properties",
   {
-    'android': {
-      'enableProguardInReleaseBuilds': true,
-      'enableShrinkResourcesInReleaseBuilds': true,
-      'useLegacyPackaging': true
+    "android": {
+      "enableProguardInReleaseBuilds": true,
+      "enableShrinkResourcesInReleaseBuilds": true,
+      "useLegacyPackaging": true
     }
   }
 ]);
 
-fs.writeFileSync('app.json', JSON.stringify(appJson, null, 2), 'utf8');
-"
+fs.writeFileSync("app.json", JSON.stringify(appJson, null, 2), "utf8");
+console.log("✅ app.json updated successfully.");
+'
 
 # 5. Create a fully optimized eas.json file
 echo "📝 Creating optimized eas.json profile matrix..."
