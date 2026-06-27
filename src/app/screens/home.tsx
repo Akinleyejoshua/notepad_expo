@@ -61,7 +61,7 @@ function HomeScreen() {
               </AppText>
             </View>
           ) : (
-            <CustomScrollView style={{ marginTop: 16, paddingBottom: 20 }}>
+            <CustomScrollView style={{ marginTop: 16, paddingBottom: 20, paddingHorizontal: 10 }}>
               {notes.map((item: any, index: any) => (
                 <NoteItems key={item.id} index={index} item={item} />
               ))}
