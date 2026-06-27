@@ -1,13 +1,11 @@
-// src/screens/HomeScreen.tsx
-import { View, Text, Button, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useCustomNavigation } from "../../context/custom-navigation";
 import { HomeHeader } from "@/components/home-header";
-import { AppText } from "@/components/app-text";
-import { CreateNavBar } from "@/components/create-navbar";
 import { AppTextArea } from "@/components/app-textareaa";
 import { useNoteStore } from "@/store/use-note-store";
+import { BottomNav } from "@/components/bottom-nav";
 
-// src/screens/DetailsScreen.tsx
 export default function CreateScreen({ route }: { route: any }) {
   const navigation = useCustomNavigation();
   const { noteId } = route.params || {};
@@ -23,57 +21,68 @@ export default function CreateScreen({ route }: { route: any }) {
   };
 
   return (
-    <View style={styles.home}>
-      <HomeHeader
-        title="Creator"
-        style={{ marginTop: 60 }}
-        hasBackButton={true}
-      />
-      <View style={{ height: 760 }}>
-        <AppTextArea
-          placeholder="Title"
-          style={{ marginTop: 20 }}
-          onChange={(val: any) => handleTitleChange(val)}
+    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
+      <View style={styles.content}>
+        <HomeHeader
+          title="Create"
+          subtitle="Write something meaningful"
+          style={{ marginTop: 12 }}
+          hasBackButton={true}
         />
-        <AppTextArea
-          placeholder="Content"
-          style={{
-            height: 600,
-            marginTop: 0,
-            padding: 20,
-            borderRadius: 20,
-            backgroundColor: "#f4f4f4c7",
-          }}
-          inputStyle={{ fontSize: 20 }}
-          onChange={(val: any) => handleContentChange(val)}
-        />
+
+        <View style={styles.editorArea}>
+          <AppTextArea
+            placeholder="Title"
+            style={{ marginTop: 20 }}
+            onChange={(val: any) => handleTitleChange(val)}
+          />
+          <View style={styles.contentCard}>
+            <AppTextArea
+              placeholder="Start writing..."
+              style={{ flex: 1 }}
+              inputStyle={{ fontSize: 18 }}
+              onChange={(val: any) => handleContentChange(val)}
+            />
+          </View>
+        </View>
       </View>
-      <View
-        style={{
-          backgroundColor: "#d2d2d20a",
-          borderRadius: 50,
-          padding: 1,
-        }}
-      >
-        <CreateNavBar tabName={"Create"} tabActive={true} noteId={null} />
+
+      {/* Bottom Navigation */}
+      <View style={styles.navWrapper}>
+        <BottomNav activeTab="Create" noteId={null} />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  home: {
-     // Allows home container to span the entire screen height
-    paddingHorizontal: 20,
-    backgroundColor: "#ffffffff", // Ensures clean backdrop match
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    maxHeight: 700,
-    width: "100%",
+  screen: {
+    flex: 1,
+    backgroundColor: "#FAFAFA",
   },
-  itemsContainer: {
-    paddingVertical: 20,
-    gap: 12, // Cleans up separation spaces uniformly
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  editorArea: {
+    flex: 1,
+    marginTop: 4,
+  },
+  contentCard: {
+    flex: 1,
+    marginTop: 16,
+    marginBottom: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#1A1A2E",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  navWrapper: {
+    paddingHorizontal: 20,
+    paddingBottom: 8,
   },
 });

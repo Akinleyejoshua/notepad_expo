@@ -10,18 +10,17 @@ export function AppButton({
   innerStyle,
 }: any) {
   return (
-    <TouchableOpacity onPress={onPress} style={style}>
+    <TouchableOpacity onPress={onPress} style={style} activeOpacity={0.7}>
       <View
         style={[
           {
             display: "flex",
             flexDirection: "row",
             alignItems: "center",
-            gap: 10,
+            justifyContent: "center",
+            gap: 8,
           },
-
           innerStyle,
-
         ]}
       >
         {icon && icon}

@@ -1,91 +1,84 @@
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { AppText } from "./app-text";
-import { Edit2, TimerIcon } from "lucide-react-native";
-import { AppButton } from "./button";
-import { TrashIcon } from "lucide-react-native";
+import { Edit2, Trash2, Clock } from "lucide-react-native";
 import { useCustomNavigation } from "@/context/custom-navigation";
 import { useNoteStore } from "@/store/use-note-store";
-import { dialog } from '@/store/use-modal-store';
+import { dialog } from "@/store/use-modal-store";
 
-export function NoteItems({ item, index, style, key }: any) {
+export function NoteItems({ item, index, style }: any) {
   const navigation = useCustomNavigation();
   const deleteNote = useNoteStore((state) => state.deleteNote);
 
   const handleDelete = async () => {
     const userConfirmed = await dialog.confirm(
-      'Delete Note?', 
-      'This action cannot be undone. Do you wish to proceed?'
+      "Delete Note?",
+      "This action cannot be undone. Do you wish to proceed?"
     );
-
     if (userConfirmed) {
       deleteNote(item.id);
     }
   };
-  
+
+  // Format relative time
+  const formatTime = (timestamp: number) => {
+    const diff = Date.now() - timestamp;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+  };
+
   return (
-    <TouchableOpacity onPress={() => navigation.push("Details", { noteId: item.id })}>
-      <View key={index} style={[styles.container, style]}>
-        <AppText style={{ fontSize: 26, fontWeight: "600" }}>
-          {item.title}
-        </AppText>
-        <AppText style={{ color: "#000000ff", fontSize: 18, opacity: 0.5 }}>
-          {item.description}
-        </AppText>
-        <View
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            gap: 10,
-            alignItems: "center",
-            position: "absolute",
-            bottom: 20,
-            right: 20,
-            backgroundColor: "#ffffffff",
-            padding: 10,
-            borderRadius: 20,
-          }}
-        >
-          <TimerIcon size={20} color="#2563eb" />
-          <AppText style={{ color: "royalblue" }}>
-            {new Date(item.updatedAt).toLocaleTimeString()}
+    <TouchableOpacity
+      onPress={() => navigation.push("Details", { noteId: item.id })}
+      activeOpacity={0.8}
+    >
+      <View style={[styles.card, style]}>
+        {/* Timestamp badge — top right */}
+        <View style={styles.timeBadge}>
+          <Clock size={11} color="#8E8E9A" />
+          <AppText variant="caption" style={styles.timeText}>
+            {formatTime(item.updatedAt)}
           </AppText>
         </View>
 
-        <View
-          style={{
-            marginTop: 40,
-            display: "flex",
-            flexDirection: "row",
-            gap: 10,
-          }}
+        {/* Title */}
+        <AppText
+          variant="bold"
+          numberOfLines={1}
+          style={styles.title}
         >
-          <AppButton
-          onPress={handleDelete}
-            style={{
-              backgroundColor: "#d94d4dcc",
-              width: 10,
-              borderRadius: 50,
-              padding: 10,
-              paddingHorizontal: 20,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            icon={<TrashIcon size={15} color="white" />}
-          />
+          {item.title}
+        </AppText>
 
-          <AppButton
-          onPress={() => navigation.push("Details", { noteId: item.id })}
-            style={{
-              backgroundColor: "#4d85d9d1",
-              width: 10,
-              borderRadius: 50,
-              padding: 10,
-              paddingHorizontal: 20,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            icon={<Edit2 size={15} color="white" />}
-          />
+        {/* Description */}
+        <AppText
+          numberOfLines={2}
+          style={styles.description}
+        >
+          {item.description}
+        </AppText>
+
+        {/* Action buttons — bottom right */}
+        <View style={styles.actions}>
+          <TouchableOpacity
+            onPress={handleDelete}
+            style={[styles.actionBtn, styles.deleteBtn]}
+            activeOpacity={0.7}
+          >
+            <Trash2 size={14} color="#FF6B6B" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => navigation.push("Details", { noteId: item.id })}
+            style={[styles.actionBtn, styles.editBtn]}
+            activeOpacity={0.7}
+          >
+            <Edit2 size={14} color="#4169E1" />
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -93,13 +86,64 @@ export function NoteItems({ item, index, style, key }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginVertical: 2,
-    padding: 30,
-    borderRadius: 30,
-    backgroundColor: "#e9e9e947",
-    borderLeftWidth: 1,
-    borderLeftColor: "#53a0f7ba",
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12,
     position: "relative",
+    // Premium card shadow
+    shadowColor: "#1A1A2E",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  timeBadge: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#F8F8FC",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  timeText: {
+    fontSize: 11,
+    color: "#8E8E9A",
+  },
+  title: {
+    fontSize: 18,
+    color: "#1A1A2E",
+    marginBottom: 6,
+    paddingRight: 80, // avoid overlap with time badge
+  },
+  description: {
+    fontSize: 14,
+    color: "#8E8E9A",
+    lineHeight: 20,
+    paddingRight: 20,
+  },
+  actions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+    marginTop: 16,
+  },
+  actionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  deleteBtn: {
+    backgroundColor: "#FFF0F0",
+  },
+  editBtn: {
+    backgroundColor: "#EBF0FB",
   },
 });

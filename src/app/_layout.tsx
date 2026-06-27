@@ -4,6 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { CustomStackNavigator, CustomScreen } from '../../src/context/custom-navigation';
 import HomeScreen  from './screens/home';
 import DetailsScreen from './screens/details';
@@ -31,8 +32,8 @@ const { visible, type, message, description, hideToast } = useToastStore();
   if (!loaded && !error) return null;
 
   return (
-    <>
-    {/* 2. Global floating toast layer */}
+    <SafeAreaProvider>
+    {/* Global floating toast layer */}
       <Toast
         visible={visible}
         type={type}
@@ -47,6 +48,6 @@ const { visible, type, message, description, hideToast } = useToastStore();
       <CustomScreen name="Search" component={SearchScreen} />
       <CustomScreen name="Create" component={CreateScreen} />
     </CustomStackNavigator>
-    </>
+    </SafeAreaProvider>
   );
 }

@@ -1,97 +1,113 @@
-// src/screens/HomeScreen.tsx
 import { useEffect } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useCustomNavigation } from "../../context/custom-navigation";
 import { HomeHeader } from "@/components/home-header";
-import { AppInput } from "@/components/input";
-import { NotebookIcon, PlusIcon, SearchIcon } from "lucide-react-native";
+import { NotebookIcon } from "lucide-react-native";
 import { AppText } from "@/components/app-text";
 import { NoteItems } from "@/components/note-items";
 import { useNoteStore } from "../../store/use-note-store";
-import { HomeNavBar } from "@/components/home-navbar";
+import { BottomNav } from "@/components/bottom-nav";
 import { CustomScrollView } from "@/components/custom-scroll-view";
-import { AppButton } from "@/components/button";
+import { SkeletonList } from "@/components/skeleton";
 
 function HomeScreen() {
   const navigation = useCustomNavigation();
-  const tabName = "Home";
-  const tabActive = true;
 
-  // 1. Grab both the notes array and the store's load mechanism
+  // Grab state from the note store
   const notes = useNoteStore((state) => state.notes);
+  const isLoading = useNoteStore((state) => state.isLoading);
   const loadNotes = useNoteStore((state) => state.loadNotes);
 
-  // 2. Hydrate state from local storage explicitly when screen mounts
+  // Hydrate state from local storage on mount
   useEffect(() => {
     loadNotes();
   }, []);
 
   return (
-    // Changed outer view wrapper to flex: 1 so it fills up the viewport safely
-    <View style={styles.home}>
-      <HomeHeader title="Notepad" style={{ marginTop: 60 }} />
-      {/* 3. Changed from a View to a ScrollView for native scrolling performance */}
+    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
+      <View style={styles.content}>
+        <HomeHeader
+          title="Notepad"
+          subtitle="Your notes, beautifully organized"
+          style={{ marginTop: 12 }}
+        />
 
-      <View style={{ height: 760 }}>
-        {notes.length == 0 ? (
-          <View
-            style={{
-              marginTop: 20,
-              alignItems: "center",
-              height: "100%",
-              justifyContent: "center",
-            }}
-          >
-            <NotebookIcon
-              size={100}
-              color="#535ef6b1"
-              style={{ marginBottom: 20 }}
-            />
-            <AppText
-              variant="default"
-              style={{ fontSize: 20, color: "#000000b1" }}
-            >
-              No notes found, Click Create to document a data
-            </AppText>
-          </View>
-        ) : (
-          <CustomScrollView style={{ marginTop: 20, paddingBottom: 20 }}>
-            {notes.map((item: any, index: any) => {
-              return (
-                // Use a unique ID string for keys instead of array index for stable rendering lists
+        <View style={styles.listArea}>
+          {isLoading ? (
+            <SkeletonList count={4} />
+          ) : notes.length === 0 ? (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconCircle}>
+                <NotebookIcon size={48} color="#4169E1" />
+              </View>
+              <AppText
+                variant="bold"
+                style={{ fontSize: 18, color: "#1A1A2E", marginTop: 20 }}
+              >
+                No notes yet
+              </AppText>
+              <AppText
+                variant="caption"
+                style={{
+                  fontSize: 14,
+                  textAlign: "center",
+                  marginTop: 8,
+                  lineHeight: 20,
+                  paddingHorizontal: 20,
+                }}
+              >
+                Tap Create to start writing your first note
+              </AppText>
+            </View>
+          ) : (
+            <CustomScrollView style={{ marginTop: 16, paddingBottom: 20 }}>
+              {notes.map((item: any, index: any) => (
                 <NoteItems key={item.id} index={index} item={item} />
-              );
-            })}
-          </CustomScrollView>
-        )}
+              ))}
+            </CustomScrollView>
+          )}
+        </View>
       </View>
 
-      <View
-        style={{
-          backgroundColor: "#d2d2d207",
-          borderRadius: 50,
-          padding: 1,
-          marginBottom: 60,
-        }}
-      >
-        <HomeNavBar tabName={tabName} tabActive={tabActive} />
+      {/* Bottom Navigation */}
+      <View style={styles.navWrapper}>
+        <BottomNav activeTab="Home" />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  home: {
-    flex: 1, // Allows home container to span the entire screen height
-    paddingHorizontal: 20,
-    backgroundColor: "#fff", // Ensures clean backdrop match
-    flexDirection: "column",
-    justifyContent: "space-between",
-    maxHeight: 700,
+  screen: {
+    flex: 1,
+    backgroundColor: "#FAFAFA",
   },
-  itemsContainer: {
-    paddingVertical: 20,
-    gap: 12, // Cleans up separation spaces uniformly
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  listArea: {
+    flex: 1,
+    marginTop: 8,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: 80,
+  },
+  emptyIconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: "#EBF0FB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  navWrapper: {
+    paddingHorizontal: 20,
+    paddingBottom: 8,
   },
 });
 
