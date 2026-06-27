@@ -192,9 +192,9 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   centerLabel: {
-    fontSize: 10,
+    fontSize: 13,
     color: "#4169E1",
-    marginTop: 2,
+    marginTop: 6,
     fontFamily: "Bricolage-Bold",
   },
 });
