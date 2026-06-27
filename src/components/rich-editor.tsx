@@ -1,17 +1,15 @@
 import React, { useRef, useState } from "react";
-import { StyleSheet, View, TouchableOpacity, ScrollView, Platform, Alert, ActivityIndicator } from "react-native";
+import { StyleSheet, View, TouchableOpacity, ScrollView, Platform, Alert, ActivityIndicator, PermissionsAndroid } from "react-native";
 import { WebView } from "react-native-webview";
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 
-export default function CustomRichEditor() {
+export default function CustomRichEditor({placeholder, onChange}:any) {
   const webViewRef = useRef<WebView>(null);
-  const insets = useSafeAreaInsets();
   const [activeStyles, setActiveStyles] = useState<string[]>([]);
   const [isRecording, setIsRecording] = useState(false);
-  const [isLoadingMedia, setIsLoadingMedia] = useState(false); // Global spinner toggle for encoding states
+  const [isLoadingMedia, setIsLoadingMedia] = useState(false);
 
   const editorHTML = `
     <!DOCTYPE html>
@@ -33,15 +31,87 @@ export default function CustomRichEditor() {
         img, video { max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; display: block; background-color: #f3f4f6; }
         audio { width: 100%; margin: 12px 0; display: block; }
         .media-block { display: block; margin: 10px 0; width: 100%; }
+        
+        #recording-indicator {
+          display: none;
+          align-items: center;
+          gap: 8px;
+          color: #ef4444;
+          font-weight: 600;
+          font-size: 14px;
+          margin-bottom: 10px;
+          padding: 6px 12px;
+          background-color: #fef2f2;
+          border-radius: 20px;
+          width: fit-content;
+        }
+        .dot {
+          width: 8px;
+          height: 8px;
+          background-color: #ef4444;
+          border-radius: 50%;
+          animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+          0% { transform: scale(0.9); opacity: 0.6; }
+          50% { transform: scale(1.2); opacity: 1; }
+          100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        .media-container {
+          position: relative;
+          margin: 16px 0;
+          padding: 12px;
+          background-color: #f3f4f6;
+          border-radius: 12px;
+          border: 1px solid #e5e7eb;
+          display: flex;
+          align-items: center;
+        }
+        
+        .media-container audio {
+          flex: 1;
+          margin-right: 8px;
+        }
+
+        .asset-delete-btn {
+          position: absolute;
+          top: -10px;
+          right: -10px;
+          width: 26px;
+          height: 26px;
+          border-radius: 13px;
+          background-color: #ef4444;
+          color: #ffffff;
+          border: 2px solid #ffffff;
+          font-size: 14px;
+          font-weight: bold;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+          cursor: pointer;
+        }
       </style>
     </head>
     <body>
+      <div id="recording-indicator"><div class="dot"></div><span>Recording live voice note...</span></div>
+
       <div id="editor" contenteditable="true" placeholder="Start your note..."></div>
       
       <script>
         const editor = document.getElementById('editor');
-        let mediaRecorder;
+        const indicator = document.getElementById('recording-indicator');
+        let mediaRecorder = null;
         let audioChunks = [];
+        let currentStream = null;
+
+        function logToNative(stage, detail = "") {
+          window.ReactNativeWebView.postMessage(JSON.stringify({ 
+            type: 'TRACKER', 
+            message: stage + (detail ? ' -> ' + detail : '') 
+          }));
+        }
 
         document.addEventListener('selectionchange', () => {
           const styles = [];
@@ -51,15 +121,22 @@ export default function CustomRichEditor() {
           window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'STYLE_CHANGE', styles }));
         });
 
-        // Safe DOM append layout injector
         window.insertMediaToDOM = function(htmlContent) {
           editor.focus();
           const selection = window.getSelection();
           
+          const fullyWrappedAsset = \`
+            <div class="media-container" contenteditable="false">
+              \${htmlContent}
+              <button class="asset-delete-btn" onclick="this.parentElement.remove();" type="button">×</button>
+            </div>
+            <br />
+          \`;
+          
           if (selection.rangeCount > 0) {
             const range = selection.getRangeAt(0);
             if (editor.contains(range.commonAncestorContainer)) {
-              const node = range.createContextualFragment(htmlContent);
+              const node = range.createContextualFragment(fullyWrappedAsset);
               range.insertNode(node);
               range.collapse(false);
               return;
@@ -68,42 +145,79 @@ export default function CustomRichEditor() {
           
           const container = document.createElement('div');
           container.className = 'media-block';
-          container.innerHTML = htmlContent;
+          container.innerHTML = fullyWrappedAsset;
           editor.appendChild(container);
         };
 
+        // Web Audio API Loop Engine
         async function startWebAudioRecord() {
           try {
             audioChunks = [];
-            const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream, { mimeType });
+            logToNative("Requesting browser mic stream");
+            
+            currentStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+            // Fallback for container configurations
+            let options = { mimeType: 'audio/webm' };
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+              options = { mimeType: 'audio/mp4' };
+            }
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+              options = { mimeType: '' }; 
+            }
+
+            mediaRecorder = new MediaRecorder(currentStream, options);
             
             mediaRecorder.ondataavailable = (event) => {
-              if (event.data.size > 0) audioChunks.push(event.data);
+              if (event.data && event.data.size > 0) {
+                audioChunks.push(event.data);
+              }
             };
 
             mediaRecorder.onstop = () => {
-              const audioBlob = new Blob(audioChunks, { type: mimeType });
+              indicator.style.display = 'none';
+
+              if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+              }
+
+              if (audioChunks.length === 0) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({ 
+                  type: 'ERROR', 
+                  message: 'Recording returned an empty buffer.' 
+                }));
+                return;
+              }
+
+              const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/mp4' });
               const reader = new FileReader();
               reader.readAsDataURL(audioBlob);
               reader.onloadend = () => {
                 const base64Audio = reader.result;
-                const audioTag = '<audio src="' + base64Audio + '" controls></audio><br>';
+                const audioTag = '<audio src="' + base64Audio + '" controls></audio>';
                 window.insertMediaToDOM(audioTag);
               };
             };
 
-            mediaRecorder.start();
+            mediaRecorder.start(250); 
+            indicator.style.display = 'flex';
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SYNC_REC_STATE', recording: true }));
+
           } catch (err) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ERROR', message: err.toString() }));
+            indicator.style.display = 'none';
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ERROR', message: 'Mic Error: ' + err.toString() }));
           }
         }
 
         function stopWebAudioRecord() {
-          if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+          try {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+              mediaRecorder.stop();
+              window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SYNC_REC_STATE', recording: false }));
+            }
+          } catch (err) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ERROR', message: 'Stop Error: ' + err.toString() }));
           }
         }
       </script>
@@ -121,7 +235,6 @@ export default function CustomRichEditor() {
     webViewRef.current?.injectJavaScript(js);
   };
 
-  // 3. Upgraded Media Picker Core (With Base64 Transcoding engine)
   const pickMedia = async (type: "image" | "video") => {
     const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!granted) {
@@ -131,21 +244,17 @@ export default function CustomRichEditor() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: type === "image" ? ['images'] : ['videos'],
-      quality: 0.7, // Lower compression slightly to speed up string conversion processing timelines
+      quality: 0.7,
     });
 
     if (!result.canceled && result.assets?.[0]) {
       const asset = result.assets[0];
-      
       try {
         setIsLoadingMedia(true);
-
-        // Convert file layout addresses directly to embedded stream blocks
         const base64Data = await FileSystem.readAsStringAsync(asset.uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
 
-        // Grab clean layout formats, fallback smoothly if properties are blank
         const mimeType = asset.mimeType || (type === "image" ? "image/jpeg" : "video/mp4");
         const dataUri = `data:${mimeType};base64,${base64Data}`;
 
@@ -155,20 +264,37 @@ export default function CustomRichEditor() {
           triggerNativeMediaInsertion(`<video src="${dataUri}" controls playsinline preload="auto"></video>`);
         }
       } catch (error) {
-        Alert.alert("Encoding Error", "Failed to compile file binaries into canvas viewport.");
+        Alert.alert("Encoding Error", "Failed to compile file binaries.");
       } finally {
         setIsLoadingMedia(false);
       }
     }
   };
 
-  const toggleRecording = () => {
+  const toggleRecording = async () => {
     if (isRecording) {
       webViewRef.current?.injectJavaScript(`stopWebAudioRecord(); true;`);
-      setIsRecording(false);
     } else {
+      if (Platform.OS === 'android') {
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+            {
+              title: "Microphone Access",
+              message: "This notepad requires microphone access to insert voice notes.",
+              buttonPositive: "OK",
+            }
+          );
+          if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+            Alert.alert("Permission Denied", "System microphone access is required.");
+            return;
+          }
+        } catch (err) {
+          console.warn(err);
+          return;
+        }
+      }
       webViewRef.current?.injectJavaScript(`startWebAudioRecord(); true;`);
-      setIsRecording(true);
     }
   };
 
@@ -210,13 +336,19 @@ export default function CustomRichEditor() {
         <WebView
           style={{ backgroundColor: 'transparent' }}
           ref={webViewRef}
-          source={{ html: editorHTML }}
+          source={{ 
+            html: editorHTML,
+            baseUrl: Platform.OS === 'ios' ? 'https://localhost' : 'http://localhost'
+          }}
           onMessage={(e) => {
             try {
               const data = JSON.parse(e.nativeEvent.data);
               if (data.type === "STYLE_CHANGE") setActiveStyles(data.styles);
+              if (data.type === "SYNC_REC_STATE") setIsRecording(data.recording);
+              if (data.type === "TRACKER") console.log("🎙️ [WEB_RECORDER_LOG]:", data.message);
               if (data.type === "ERROR") {
-                Alert.alert("Hardware Access Blocked", "Please verify microphone permissions are checked in your device System Settings app.");
+                setIsRecording(false);
+                Alert.alert("Media Engine Error", data.message);
               }
             } catch {}
           }}
@@ -224,17 +356,16 @@ export default function CustomRichEditor() {
           domStorageEnabled={true}
           dataDetectorTypes={Platform.OS === "ios" ? "none" : ["none"]}
           nestedScrollEnabled={true}
-          mediaPlaybackRequiresUserAction={false}
-          
-          // Sandboxing override parameters
+          mediaPlaybackRequiresUserAction={false} // 🌟 CRITICAL FOR IOS WEB MIC ACCESS
           originWhitelist={['*']}
           allowFileAccess={true}
           allowFileAccessFromFileURLs={true}
           allowUniversalAccessFromFileURLs={true}
-          
+          mediaCapturePermissionGrantType="grant" // Force authorization approval pass
+
           {...(Platform.OS === 'android' ? {
             onPermissionRequest: (request: any) => {
-              request.grant(request.resources);
+              request.grant(request.resources); // 🌟 CRITICAL FOR ANDROID WEB MIC ACCESS
             }
           } : {})}
         />
@@ -244,7 +375,7 @@ export default function CustomRichEditor() {
 }
 
 const styles = StyleSheet.create({
-  toolbarBar: { height: 52, backgroundColor: "#f9fafb18", borderBottomWidth: 1, borderBottomColor: "#e5e7eb", justifyContent: "center" },
+  toolbarBar: { height: 52, backgroundColor: "#f9fafb04", borderBottomWidth: 1, borderBottomColor: "#e5e7eb", justifyContent: "center" },
   scrollContainer: { alignItems: "center", paddingHorizontal: 12, gap: 10 },
   iconButton: { width: 38, height: 38, borderRadius: 8, justifyContent: "center", alignItems: "center", backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#e5e7eb" },
   activeIconButton: { backgroundColor: "#2563eb", borderColor: "#2563eb" },
