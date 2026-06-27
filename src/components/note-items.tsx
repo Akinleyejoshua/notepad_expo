@@ -72,12 +72,12 @@ export function NoteItems({ item, index, style }: any) {
             icon={<Trash2 size={14} color="#FF6B6B" />}
           />
 
-          <AppButton
+          {/* <AppButton
             onPress={() => navigation.push("Details", { noteId: item.id })}
             style={[styles.actionBtn, styles.editBtn]}
             activeOpacity={0.7}
             icon={<Edit2 size={14} color="#4169E1" />}
-          />
+          /> */}
           
         </View>
       </View>

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "notepad",
-    "slug": "notepad",
+    "name": "app",
+    "slug": "app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "notepad",
+    "scheme": "app",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"

@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useCustomNavigation } from "../../context/custom-navigation";
 import { HomeHeader } from "@/components/home-header";
 import { NotebookIcon } from "lucide-react-native";
 import { AppText } from "@/components/app-text";
@@ -12,7 +11,6 @@ import { CustomScrollView } from "@/components/custom-scroll-view";
 import { SkeletonList } from "@/components/skeleton";
 
 function HomeScreen() {
-  const navigation = useCustomNavigation();
 
   // Grab state from the note store
   const notes = useNoteStore((state) => state.notes);
